@@ -1,0 +1,10 @@
+name: 'On Casa Prod Deploy'
+description: 'Moves cards from "Merged to QA" column to "Done" column if a deploy has occurred within the day'
+inputs:
+  token:
+    description: 'Token for api usage provided by github'
+    required: true
+    default: ''
+runs:
+  using: 'node12'
+  main: 'index.js'
