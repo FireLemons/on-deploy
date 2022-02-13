@@ -38,7 +38,7 @@ async function getCardPage(columnId, pageNumber) {
 }
 async function main() {
     const cardPageData = await getCardPage(16739169, 1);
-    console.log();
+    console.log(cardPageData);
     return;
 }
 main().catch((e) => {

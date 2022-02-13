@@ -39,7 +39,7 @@ async function getCardPage (columnId: number, pageNumber: number): Promise<objec
 
 async function main (): Promise<void> {
   const cardPageData = await getCardPage(16739169, 1)
-  console.log()
+  console.log(cardPageData)
 
   return
 }
