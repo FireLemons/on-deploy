@@ -1,0 +1,13 @@
+{
+  "ignore": [
+    ".git",
+    "node_modules/**/node_modules"
+  ],
+  "execMap": {
+    "ts": "npx tsc #"
+  },
+  "watch": [
+    "index.ts"
+  ],
+  "ext": "ts"
+}
