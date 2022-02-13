@@ -34,3 +34,12 @@ async function getCardPage(columnId, pageNumber) {
         per_page: MAX_CARDS_PER_PAGE
     });
 }
+async function main() {
+    const cardPageData = await getCardPage(16739169, 1);
+    console.log();
+    return;
+}
+main().catch((e) => {
+    console.error(e.message);
+    process.exit(1);
+});
