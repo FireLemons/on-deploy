@@ -29,12 +29,19 @@ async function getCardPage (columnId: number, pageNumber: number): Promise<objec
     throw new RangeError('Param pageNumber cannot be less than 1')
   }
 
-  return await octokit.request('GET /projects/columns/{column_id}/cards', {
+  const cardPageFetchResponse = await octokit.request('GET /projects/columns/{column_id}/cards', {
     column_id: columnId,
     archived_state: 'not_archived',
     page: pageNumber,
     per_page: MAX_CARDS_PER_PAGE
   })
+
+  if (200 <= cardPageFetchResponse.status && cardPageFetchResponse.status < 300) {
+    return cardPageFetchResponse.data
+  } else {
+    console.error(`Failed to fetch card page #${pageNumber} from column id=${columnId}`)
+    throw new Error(JSON.stringify(cardPageFetchResponse, null, 2))
+  }
 }
 
 async function main (): Promise<void> {

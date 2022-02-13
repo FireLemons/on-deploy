@@ -29,12 +29,19 @@ async function getCardPage(columnId, pageNumber) {
     else if (pageNumber < 1) {
         throw new RangeError('Param pageNumber cannot be less than 1');
     }
-    return await octokit.request('GET /projects/columns/{column_id}/cards', {
+    const cardPageFetchResponse = await octokit.request('GET /projects/columns/{column_id}/cards', {
         column_id: columnId,
         archived_state: 'not_archived',
         page: pageNumber,
         per_page: MAX_CARDS_PER_PAGE
     });
+    if (200 <= cardPageFetchResponse.status && cardPageFetchResponse.status < 300) {
+        return cardPageFetchResponse.data;
+    }
+    else {
+        console.error(`Failed to fetch card page #${pageNumber} from column id=${columnId}`);
+        throw new Error(JSON.stringify(cardPageFetchResponse, null, 2));
+    }
 }
 async function main() {
     const cardPageData = await getCardPage(16739169, 1);
