@@ -7,6 +7,9 @@ const token = core.getInput('token');
 const { owner, repo } = github.context.repo;
 const octokit = github.getOctokit(token);
 const MAX_CARDS_PER_PAGE = 100; // from https://docs.github.com/en/rest/reference/projects#list-project-cards
+function isSuccessStatus(response) {
+    return 200 <= response.status && response.status < 300;
+}
 // Lists up to MAX_CARDS_PER_PAGE cards from a column
 //  @param    columnId The id of the column containing the cards
 //  @param    pageNumber The page of up to MAX_CARDS_PER_PAGE cards to retrieve
@@ -35,7 +38,7 @@ async function getCardPage(columnId, pageNumber) {
         page: pageNumber,
         per_page: MAX_CARDS_PER_PAGE
     });
-    if (200 <= cardPageFetchResponse.status && cardPageFetchResponse.status < 300) {
+    if (isSuccessStatus(cardPageFetchResponse)) {
         return cardPageFetchResponse.data;
     }
     else {
@@ -43,6 +46,28 @@ async function getCardPage(columnId, pageNumber) {
         throw new Error(JSON.stringify(cardPageFetchResponse, null, 2));
     }
 }
+/*
+// Get a column by name in a project
+//  @param    columnName The name of the column
+//  @param    projectId The id of the project containing the column
+//  @return   A promise representing fetching of the column
+//    @fulfilled An object representing the first column with name matching columnName
+//                 undefined if the column could not be found
+//  @throws   {RangeError} if projectId is less than 1
+//  @throws   {Error}      if an error occurs while trying to fetch the project data
+async function getColumn (columnName: string, projectId: number): Promise<object> {
+  if (projectId < 0) {
+    throw new RangeError('Param projectId cannot be negative')
+  }
+
+  const columnList = await octokit.request('GET /projects/{project_id}/columns', {
+    project_id: projectId
+  })
+
+  return columnList.data.find((column) => {
+    return column.name === columnName
+  })
+}*/
 async function main() {
     const cardPageData = await getCardPage(16739169, 1);
     console.log(cardPageData);
