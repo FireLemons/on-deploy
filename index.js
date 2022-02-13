@@ -1,5 +1,7 @@
-import * as core from '@actions/core';
-import * as github from '@actions/github';
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const core = require("@actions/core");
+const github = require("@actions/github");
 const token = core.getInput('token');
 // Javascript destructuring assignment. See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Destructuring_assignment
 const { owner, repo } = github.context.repo;
