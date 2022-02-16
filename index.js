@@ -2,9 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = require("@actions/core");
 const github = require("@actions/github");
-const token = core.getInput('token');
-// Javascript destructuring assignment. See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Destructuring_assignment
 const { owner, repo } = github.context.repo;
+const token = core.getInput('token');
 const octokit = github.getOctokit(token);
 const MAX_CARDS_PER_PAGE = 100; // from https://docs.github.com/en/rest/reference/projects#list-project-cards
 function isSuccessStatus(response) {
@@ -67,12 +66,14 @@ async function getColumn (columnName: string, projectId: number): Promise<object
   return columnList.data.find((column) => {
     return column.name === columnName
   })
-}*/
-async function main() {
-    const cardPageData = await getCardPage(16739169, 1);
-    console.log(cardPageData);
-    return;
 }
+
+async function main (): Promise<void> {
+  const cardPageData = await getCardPage(16739169, 1)
+  console.log(cardPageData)
+
+  return
+}*/
 main().catch((e) => {
     console.error(e.message);
     process.exit(1);

@@ -1,9 +1,9 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import { OctokitResponse } from '@octokit/types'
-const token = core.getInput('token')
 // Javascript destructuring assignment. See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Destructuring_assignment
+import { OctokitResponse } from '@octokit/types'
 const {owner, repo} = github.context.repo
+const token = core.getInput('token')
 const octokit = github.getOctokit(token)
 
 const MAX_CARDS_PER_PAGE = 100 // from https://docs.github.com/en/rest/reference/projects#list-project-cards
@@ -70,14 +70,14 @@ async function getColumn (columnName: string, projectId: number): Promise<object
   return columnList.data.find((column) => {
     return column.name === columnName
   })
-}*/
+}
 
 async function main (): Promise<void> {
   const cardPageData = await getCardPage(16739169, 1)
   console.log(cardPageData)
 
   return
-}
+}*/
 
 main().catch((e) => {
   console.error(e.message)
