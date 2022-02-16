@@ -3,6 +3,7 @@ import * as github from '@actions/github'
 // Javascript destructuring assignment. See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Destructuring_assignment
 import { OctokitResponse } from '@octokit/types'
 const {owner, repo} = github.context.repo
+const projectName = core.getInput('project_name')
 const token = core.getInput('token')
 const octokit = github.getOctokit(token)
 
@@ -96,7 +97,7 @@ async function getProject (projectName: string): Promise<object | void> {
 
 
 async function main (): Promise<void> {
-  const project = await getProject("Test")
+  const project = await getProject(projectName)
   console.log(project)
 
   return

@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const core = require("@actions/core");
 const github = require("@actions/github");
 const { owner, repo } = github.context.repo;
+const projectName = core.getInput('project_name');
 const token = core.getInput('token');
 const octokit = github.getOctokit(token);
 const MAX_CARDS_PER_PAGE = 100; // from https://docs.github.com/en/rest/reference/projects#list-project-cards
@@ -87,7 +88,7 @@ async function getProject(projectName) {
     });
 }
 async function main() {
-    const project = await getProject("Test");
+    const project = await getProject(projectName);
     console.log(project);
     return;
 }
