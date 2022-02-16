@@ -97,7 +97,19 @@ async function getProject (projectName: string): Promise<object | void> {
 
 
 async function main (): Promise<void> {
-  const project = await getProject(projectName)
+  let project
+
+  try {
+    project = await getProject(projectName)
+
+    if (!project) {
+      throw new Error('  No such project with matching name')
+    }
+  } catch (e) {
+    console.error(`ERROR: Failed to find project with name "${projectName}"`)
+    throw e
+  }
+
   console.log(project)
 
   return
