@@ -1,6 +1,18 @@
 name: 'On Casa Prod Deploy'
 description: 'Moves cards from "Merged to QA" column to "Done" column if a deploy has occurred within the day'
 inputs:
+  done_column_card_limit:
+    description: 'The maximum number of cards allowed in the done column'
+    required: true
+    default: ''
+  done_column_name:
+    description: 'The name of the column representing issues pushed to prod'
+    required: true
+    default: ''
+  QA_column_name:
+    description: 'The name of the column representing issues merged to QA'
+    required: true
+    default: ''
   token:
     description: 'Token for api usage provided by github'
     required: true
