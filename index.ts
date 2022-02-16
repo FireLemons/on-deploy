@@ -70,14 +70,37 @@ async function getColumn (columnName: string, projectId: number): Promise<object
   return columnList.data.find((column) => {
     return column.name === columnName
   })
+}*/
+
+// Get the project with name passed into projectName from the current repo
+//  @param projectName The name of the project
+//  @return A promise representing fetching of the project
+//    @fulfilled An object representing the first project with name matching projectName
+//                 undefined if the project could not be found
+//  @throws   {RangeError} if projectName is empty string
+//  @throws   {Error}      if an error occurs while trying to fetch the project data
+async function getProject (projectName: string): Promise<object | void> {
+  if (!(projectName.length)) {
+    throw new RangeError('Param projectName must be a non empty string')
+  }
+
+  const repoProjects = await octokit.request('GET /repos/{owner}/{repo}/projects', {
+    owner: owner,
+    repo: repo
+  })
+
+  return repoProjects.data.find((project) => {
+    return project.name === projectName
+  })
 }
 
+
 async function main (): Promise<void> {
-  const cardPageData = await getCardPage(16739169, 1)
-  console.log(cardPageData)
+  const project = await getProject("Test")
+  console.log(project)
 
   return
-}*/
+}
 
 main().catch((e) => {
   console.error(e.message)
