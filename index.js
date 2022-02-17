@@ -63,6 +63,9 @@ async function getColumn(columnName, projectId) {
     const columnList = await octokit.request('GET /projects/{project_id}/columns', {
         project_id: projectId
     });
+    if (!isSuccessStatus(columnList)) {
+        throw new Error(`Request to fetch project column list was not successful\n  request returned with status:${columnList.status}`);
+    }
     return columnList.data.find((column) => {
         return column.name === columnName;
     });
@@ -82,6 +85,9 @@ async function getProject(projectName) {
         owner: owner,
         repo: repo
     });
+    if (!isSuccessStatus(repoProjects)) {
+        throw new Error(`Request to fetch project data was not successful\n  request returned with status:${repoProjects.status}`);
+    }
     return repoProjects.data.find((project) => {
         return project.name === projectName;
     });
@@ -94,9 +100,6 @@ async function main() {
         project = await getProject(projectName);
         if (!project) {
             throw new Error('  No such project with matching name');
-        }
-        else if (!isSuccessStatus(project)) {
-            throw new Error('  Request to fetch project data was not successful');
         }
     }
     catch (e) {
