@@ -1,8 +1,15 @@
+type Column = {
+  id: number
+  name: string
+}
+
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 // Javascript destructuring assignment. See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Destructuring_assignment
 import { OctokitResponse } from '@octokit/types'
 const {owner, repo} = github.context.repo
+const columnNameDone = core.getInput('done_column_name')
+const columnNameQA = core.getInput('QA_column_name')
 const projectName = core.getInput('project_name')
 const token = core.getInput('token')
 const octokit = github.getOctokit(token)
@@ -50,7 +57,7 @@ async function getCardPage (columnId: number, pageNumber: number): Promise<Array
   }
 }
 
-/*
+
 // Get a column by name in a project
 //  @param    columnName The name of the column
 //  @param    projectId The id of the project containing the column
@@ -59,7 +66,7 @@ async function getCardPage (columnId: number, pageNumber: number): Promise<Array
 //                 undefined if the column could not be found
 //  @throws   {RangeError} if projectId is less than 1
 //  @throws   {Error}      if an error occurs while trying to fetch the project data
-async function getColumn (columnName: string, projectId: number): Promise<object> {
+async function getColumn (columnName: string, projectId: number): Promise<Column> {
   if (projectId < 0) {
     throw new RangeError('Param projectId cannot be negative')
   }
@@ -71,7 +78,7 @@ async function getColumn (columnName: string, projectId: number): Promise<object
   return columnList.data.find((column) => {
     return column.name === columnName
   })
-}*/
+}
 
 // Get the project with name passed into projectName from the current repo
 //  @param projectName The name of the project
@@ -95,8 +102,9 @@ async function getProject (projectName: string): Promise<object | void> {
   })
 }
 
-
 async function main (): Promise<void> {
+  let columnIdDone
+  let columnIdQA
   let project
 
   try {
@@ -104,13 +112,44 @@ async function main (): Promise<void> {
 
     if (!project) {
       throw new Error('  No such project with matching name')
+    } else if (!isSuccessStatus(project)) {
+      throw new Error('  Request to fetch project data was not successful')
     }
   } catch (e) {
     console.error(`ERROR: Failed to find project with name "${projectName}"`)
     throw e
   }
 
-  console.log(project)
+  try {
+    const columnDone = await getColumn(columnNameDone, project.id)
+    console.log(columnDone)
+
+    if (!columnDone) {
+      throw new Error(`Could not find column in project:"${projectName}" with name:"${columnNameDone}"`)
+    }
+
+    columnIdDone = columnDone.id
+  } catch (e) {
+    console.error(`ERROR: Failed to find column with name ${columnNameDone}`)
+
+    throw e
+  }
+
+  try {
+    const columnQA = await getColumn(columnNameQA, project.id)
+    console.log(columnQA)
+
+    if (!columnQA) {
+      throw new Error(`Could not find column in project:"${projectName}" with name:"${columnNameQA}"`)
+    }
+
+    columnIdQA = columnQA.id
+  } catch (e) {
+    console.error(`ERROR: Failed to find column with name ${columnNameQA}`)
+
+    throw e
+  }
+
 
   return
 }
