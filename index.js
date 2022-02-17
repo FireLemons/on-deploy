@@ -54,9 +54,13 @@ async function getCardPage(columnId, pageNumber) {
 //  @return   A promise representing fetching of the column
 //    @fulfilled An object representing the first column with name matching columnName
 //                 undefined if the column could not be found
+//  @throws   {RangeError} if columnName is empty string
 //  @throws   {RangeError} if projectId is less than 1
 //  @throws   {Error}      if an error occurs while trying to fetch the project data
 async function getColumn(columnName, projectId) {
+    if (!(columnName.length)) {
+        throw new RangeError('Param projectName must be a non empty string');
+    }
     if (projectId < 0) {
         throw new RangeError('Param projectId cannot be negative');
     }
