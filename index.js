@@ -87,6 +87,7 @@ function getDeployTime() {
                 return;
             }
             response.on('data', (data) => {
+                console.log(data);
                 const deployTimestamp = data['latest_deploy_time'];
                 if (!deployTimestamp) {
                     reject(new Error('JSON from casa prod does not contain a valid deploy timestamp'));

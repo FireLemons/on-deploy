@@ -102,6 +102,7 @@ function getDeployTime (): Promise<Date>{
       }
 
       response.on('data', (data) => {
+        console.log(data)
         const deployTimestamp: string | void = data['latest_deploy_time']
 
         if (!deployTimestamp) {
