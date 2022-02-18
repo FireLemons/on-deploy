@@ -87,7 +87,19 @@ function getDeployTime() {
                 return;
             }
             response.on('data', (data) => {
-                resolve(data['latest_deploy_time']);
+                const deployTimestamp = data['latest_deploy_time'];
+                if (!deployTimestamp) {
+                    reject(new Error('JSON from casa prod does not contain a valid deploy timestamp'));
+                    return;
+                }
+                try {
+                    const deployTime = new Date(deployTimestamp);
+                    resolve(deployTime);
+                }
+                catch (e) {
+                    console.error('Could not parse value of latest_deploy_time as a date');
+                    reject(e);
+                }
             });
         }).on('error', (e) => {
             reject(e);
@@ -156,7 +168,7 @@ async function main() {
         throw e;
     }
     try {
-        console.log(getDeployTime());
+        console.log(await getDeployTime());
     }
     catch (e) {
         console.error(`ERROR: Failed to fetch latest deploy time`);
