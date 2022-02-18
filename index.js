@@ -5,12 +5,13 @@ const github = require("@actions/github");
 const { owner, repo } = github.context.repo;
 const columnNameDone = core.getInput('done_column_name');
 const columnNameQA = core.getInput('QA_column_name');
+const https = require('https');
 const projectName = core.getInput('project_name');
 const token = core.getInput('token');
 const octokit = github.getOctokit(token);
 const MAX_CARDS_PER_PAGE = 100; // from https://docs.github.com/en/rest/reference/projects#list-project-cards
-function isSuccessStatus(response) {
-    return 200 <= response.status && response.status < 300;
+function isSuccessStatus(status) {
+    return 200 <= status && status < 300;
 }
 // Lists up to MAX_CARDS_PER_PAGE cards from a column
 //  @param    columnId The id of the column containing the cards
@@ -40,7 +41,7 @@ async function getCardPage(columnId, pageNumber) {
         page: pageNumber,
         per_page: MAX_CARDS_PER_PAGE
     });
-    if (isSuccessStatus(cardPageFetchResponse)) {
+    if (isSuccessStatus(cardPageFetchResponse.status)) {
         return cardPageFetchResponse.data;
     }
     else {
@@ -67,11 +68,31 @@ async function getColumn(columnName, projectId) {
     const columnList = await octokit.request('GET /projects/{project_id}/columns', {
         project_id: projectId
     });
-    if (!isSuccessStatus(columnList)) {
+    if (!isSuccessStatus(columnList.status)) {
         throw new Error(`Request to fetch project column list was not successful\n  request returned with status:${columnList.status}`);
     }
     return columnList.data.find((column) => {
         return column.name === columnName;
+    });
+}
+// Get the latest deploy time
+//  @return A promise representing fetching of the deploy time
+//    @fulfilled The time of the latest deploy as a date object
+//  @throws   {Error} if an error occurs while trying to fetch the project data
+function getDeployTime() {
+    return new Promise((resolve, reject) => {
+        https.get('https://casavolunteertracking.org/health', (response) => {
+            if (!isSuccessStatus(response.statusCode)) {
+                reject(new Error(`Request to fetch deploy time was not successful\n  request returned with status:${response.statusCode}`));
+                return;
+            }
+            response.on('data', (data) => {
+                resolve(data['latest_deploy_time']);
+            });
+        }).on('error', (e) => {
+            reject(e);
+            return;
+        });
     });
 }
 // Get the project with name passed into projectName from the current repo
@@ -89,7 +110,7 @@ async function getProject(projectName) {
         owner: owner,
         repo: repo
     });
-    if (!isSuccessStatus(repoProjects)) {
+    if (!isSuccessStatus(repoProjects.status)) {
         throw new Error(`Request to fetch project data was not successful\n  request returned with status:${repoProjects.status}`);
     }
     return repoProjects.data.find((project) => {
@@ -132,6 +153,13 @@ async function main() {
     }
     catch (e) {
         console.error(`ERROR: Failed to find column with name ${columnNameQA}`);
+        throw e;
+    }
+    try {
+        console.log(getDeployTime());
+    }
+    catch (e) {
+        console.error(`ERROR: Failed to fetch latest deploy time`);
         throw e;
     }
     return;
