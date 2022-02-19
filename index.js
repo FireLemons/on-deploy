@@ -135,6 +135,15 @@ async function main() {
     let columnIdDone;
     let columnIdQA;
     let project;
+    if (!(columnNameDone.length)) {
+        throw new TypeError('ERROR: Param done_column_name cannot be empty string');
+    }
+    if (!(columnNameQA.length)) {
+        throw new TypeError('ERROR: Param QA_column_name cannot be empty string');
+    }
+    if (!(projectName.length)) {
+        throw new TypeError('ERROR: Param project_name cannot be empty string');
+    }
     try {
         project = await getProject(projectName);
         if (!project) {
