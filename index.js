@@ -75,13 +75,14 @@ async function getColumn(columnName, projectId) {
         return column.name === columnName;
     });
 }
-// Get the latest deploy time
+// Send a get request to retrieve json
+//  @param url The url to retrieve json from
 //  @return A promise representing fetching of the deploy time
 //    @fulfilled The time of the latest deploy as a date object
 //  @throws   {Error} if an error occurs while trying to fetch the project data
-function getDeployTime() {
+function getJSON(url) {
     return new Promise((resolve, reject) => {
-        https.get('https://casavolunteertracking.org/health', (response) => {
+        https.get(url, (response) => {
             if (!isSuccessStatus(response.statusCode)) {
                 reject(new Error(`Request to fetch deploy time was not successful\n  request returned with status:${response.statusCode}`));
                 return;
@@ -91,27 +92,15 @@ function getDeployTime() {
                 jsonBuffer.push(chunk);
             });
             response.on('end', function () {
-                let health;
+                let json;
                 try {
-                    health = JSON.parse(Buffer.concat(jsonBuffer).toString());
+                    json = JSON.parse(Buffer.concat(jsonBuffer).toString());
+                    resolve(json);
+                    return;
                 }
                 catch (e) {
                     reject(e);
                     return;
-                }
-                console.log(health);
-                const deployTimestamp = health['latest_deploy_time'];
-                if (!deployTimestamp) {
-                    reject(new Error('JSON from casa prod does not contain a valid deploy timestamp'));
-                    return;
-                }
-                try {
-                    const deployTime = new Date(deployTimestamp);
-                    resolve(deployTime);
-                }
-                catch (e) {
-                    console.error('Could not parse value of latest_deploy_time as a date');
-                    reject(e);
                 }
             });
         }).on('error', (e) => {
@@ -180,13 +169,26 @@ async function main() {
         console.error(`ERROR: Failed to find column with name ${columnNameQA}`);
         throw e;
     }
+    let deployTime;
     try {
-        console.log(await getDeployTime());
+        const health = await getJSON('https://casavolunteertracking.org/health');
+        const deployTimestamp = health['latest_deploy_time'];
+        if (!deployTimestamp) {
+            throw new Error('JSON from casa prod does not contain a valid deploy timestamp');
+        }
+        try {
+            deployTime = new Date(deployTimestamp);
+        }
+        catch (e) {
+            console.error('Could not parse value of latest_deploy_time as a date');
+            throw e;
+        }
     }
     catch (e) {
         console.error(`ERROR: Failed to fetch latest deploy time`);
         throw e;
     }
+    console.log(deployTime);
     return;
 }
 main().catch((e) => {
