@@ -9,7 +9,7 @@ const https = require('https');
 const projectName = core.getInput('project_name');
 const token = core.getInput('token');
 const octokit = github.getOctokit(token);
-const MAX_CARDS_PER_PAGE = 1; // from https://docs.github.com/en/rest/reference/projects#list-project-cards
+const MAX_CARDS_PER_PAGE = 100; // from https://docs.github.com/en/rest/reference/projects#list-project-cards
 function isSuccessStatus(status) {
     return 200 <= status && status < 400;
 }
