@@ -18,7 +18,7 @@ const octokit = github.getOctokit(token)
 const MAX_CARDS_PER_PAGE = 100 // from https://docs.github.com/en/rest/reference/projects#list-project-cards
 
 function isSuccessStatus(status: number): boolean {
-  return 200 <= status && status < 300
+  return 200 <= status && status < 400
 }
 
 // Lists up to MAX_CARDS_PER_PAGE cards from a column
@@ -154,6 +154,37 @@ async function getProject (projectName: string): Promise<object | void> {
   })
 }
 
+// Moves a card to a different column
+//  @param cardId The id of the card to be moved
+//  @param columnId The id of the column to move the card to
+//  @return A promise representing the moving of the card
+//    @fulfilled The Octokit request representing moving the card
+//  @throws   {RangeError} if an id less than zero or not an integer
+//  @throws   {Error}      if an error occurs while trying to fetch the project data
+async function moveCard (cardId: number, columnId: number): Promise<OctokitResponse<any, any>> {
+  if (cardId <= 0) {
+    throw new RangeError('Param cardId cannot be less than 1')
+  }
+
+  if (columnId <= 0) {
+    throw new RangeError('Param columnId cannot be less than 1')
+  }
+
+  if (!Number.isInteger(cardId)) {
+    throw new RangeError('Param cardId must be an integer')
+  }
+
+  if (!Number.isInteger(columnId)) {
+    throw new RangeError('Param columnId must be an integer')
+  }
+
+  return await octokit.request('POST /projects/columns/cards/{card_id}/moves', {
+    card_id: 42,
+    column_id: columnId,
+    position: 'position'
+  })
+}
+
 async function main (): Promise<void> {
   let columnIdDone
   let columnIdQA
@@ -235,7 +266,9 @@ async function main (): Promise<void> {
     throw e
   }
 
-  console.log(deployTime)
+  if (new Date().getTime() - deployTime.getTime() <= 86400000) { // If the number of milliseconds between the current time is less than
+                                                                 // 24 hours * 60 minutes * 60 seconds * 1000 milliseconds
+  }                                                              // i.e. 1 day
 
   return
 }
