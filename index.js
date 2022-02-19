@@ -9,7 +9,7 @@ const https = require('https');
 const projectName = core.getInput('project_name');
 const token = core.getInput('token');
 const octokit = github.getOctokit(token);
-const MAX_CARDS_PER_PAGE = 100; // from https://docs.github.com/en/rest/reference/projects#list-project-cards
+const MAX_CARDS_PER_PAGE = 1; // from https://docs.github.com/en/rest/reference/projects#list-project-cards
 function isSuccessStatus(status) {
     return 200 <= status && status < 400;
 }
@@ -74,6 +74,29 @@ async function getColumn(columnName, projectId) {
     return columnList.data.find((column) => {
         return column.name === columnName;
     });
+}
+// Lists all the cards for a column
+//  @param  columnId The id of the column containing the cards
+//  @return A promise representing fetching of card data
+//    @fulfilled The card data as an array of objects
+//  @throws {RangeError} if columnId is less than zero or not an integer
+//  @throws {Error}      if an error occurs while trying to fetch the card data
+async function getColumnCards(columnId) {
+    if (!Number.isInteger(columnId)) {
+        throw new RangeError('Param columnId is not an integer');
+    }
+    else if (columnId <= 0) {
+        throw new RangeError('Param columnId cannot be negative');
+    }
+    let cardIssues = [];
+    let cardPage;
+    let page = 1;
+    do {
+        cardPage = await getCardPage(columnId, page);
+        cardIssues.push(...cardPage);
+        page++;
+    } while (cardPage.data.length === MAX_CARDS_PER_PAGE);
+    return cardIssues;
 }
 // Send a get request to retrieve json
 //  @param url The url to retrieve json from
@@ -226,6 +249,7 @@ async function main() {
     if (new Date().getTime() - deployTime.getTime() <= 86400000) { // If the number of milliseconds between the current time is less than
         // 24 hours * 60 minutes * 60 seconds * 1000 milliseconds
     } // i.e. 1 day
+    console.log(await getColumnCards(columnIdQA));
     return;
 }
 main().catch((e) => {
