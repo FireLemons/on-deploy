@@ -95,7 +95,7 @@ async function getColumnCards(columnId) {
         cardPage = await getCardPage(columnId, page);
         cardIssues.push(...cardPage);
         page++;
-    } while (cardPage.data.length === MAX_CARDS_PER_PAGE);
+    } while (cardPage.length === MAX_CARDS_PER_PAGE);
     return cardIssues;
 }
 // Send a get request to retrieve json

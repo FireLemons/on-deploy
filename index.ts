@@ -111,7 +111,7 @@ async function getColumnCards (columnId: number): Promise<Array<object>> {
 
     cardIssues.push(...cardPage)
     page++
-  } while (cardPage.data.length === MAX_CARDS_PER_PAGE)
+  } while (cardPage.length === MAX_CARDS_PER_PAGE)
 
   return cardIssues
 }
