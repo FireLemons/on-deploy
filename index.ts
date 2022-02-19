@@ -101,9 +101,24 @@ function getDeployTime (): Promise<Date>{
         return
       }
 
-      response.on('data', (data) => {
-        console.log(data)
-        const deployTimestamp: string | void = data['latest_deploy_time']
+      const jsonBuffer = []
+
+      response.on('data', function (chunk) {
+        jsonBuffer.push(chunk)
+      })
+
+      response.on('end', function () {
+        let health: object
+
+        try {
+          health = JSON.parse(Buffer.concat(jsonBuffer).toString())
+        } catch (e) {
+          reject(e)
+          return
+        }
+
+        console.log(health)
+        const deployTimestamp: string | void = health['latest_deploy_time']
 
         if (!deployTimestamp) {
           reject(new Error('JSON from casa prod does not contain a valid deploy timestamp'))

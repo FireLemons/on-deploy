@@ -86,9 +86,21 @@ function getDeployTime() {
                 reject(new Error(`Request to fetch deploy time was not successful\n  request returned with status:${response.statusCode}`));
                 return;
             }
-            response.on('data', (data) => {
-                console.log(data);
-                const deployTimestamp = data['latest_deploy_time'];
+            const jsonBuffer = [];
+            response.on('data', function (chunk) {
+                jsonBuffer.push(chunk);
+            });
+            response.on('end', function () {
+                let health;
+                try {
+                    health = JSON.parse(Buffer.concat(jsonBuffer).toString());
+                }
+                catch (e) {
+                    reject(e);
+                    return;
+                }
+                console.log(health);
+                const deployTimestamp = health['latest_deploy_time'];
                 if (!deployTimestamp) {
                     reject(new Error('JSON from casa prod does not contain a valid deploy timestamp'));
                     return;
