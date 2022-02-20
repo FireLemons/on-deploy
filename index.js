@@ -247,7 +247,7 @@ async function main() {
         throw e;
     }
     if (new Date().getTime() - deployTime.getTime() <= 86400000) { // If the number of milliseconds between the current time is less than
-        // 24 hours * 60 minutes * 60 seconds * 1000 milliseconds
+        console.log('working'); // 24 hours * 60 minutes * 60 seconds * 1000 milliseconds
     } // i.e. 1 day
     console.log(await getColumnCards(columnIdQA));
     return;
