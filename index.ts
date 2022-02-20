@@ -3,6 +3,11 @@ type Column = {
   name: string
 }
 
+type Card = {
+  archived: boolean,
+  id: number
+}
+
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 // Javascript destructuring assignment. See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Destructuring_assignment
@@ -95,7 +100,7 @@ async function getColumn (columnName: string, projectId: number): Promise<Column
 //    @fulfilled The card data as an array of objects
 //  @throws {RangeError} if columnId is less than zero or not an integer
 //  @throws {Error}      if an error occurs while trying to fetch the card data
-async function getColumnCards (columnId: number): Promise<Array<object>> {
+async function getColumnCards (columnId: number): Promise<Array<Card>> {
   if (!Number.isInteger(columnId)) {
     throw new RangeError('Param columnId is not an integer')
   } else if (columnId <= 0) {
@@ -206,9 +211,9 @@ async function moveCard (cardId: number, columnId: number): Promise<OctokitRespo
   }
 
   return await octokit.request('POST /projects/columns/cards/{card_id}/moves', {
-    card_id: 42,
+    card_id: cardId,
     column_id: columnId,
-    position: 'position'
+    position: 'top'
   })
 }
 
@@ -297,7 +302,11 @@ async function main (): Promise<void> {
     console.log('working')                                       // 24 hours * 60 minutes * 60 seconds * 1000 milliseconds
   }                                                              // i.e. 1 day
 
-  console.log(await getColumnCards(columnIdQA))
+  const QACards = await getColumnCards(columnIdQA)
+
+  for (const card of QACards) {
+    console.log(await moveCard(card.id, columnIdDone))
+  }
 
   return
 }

@@ -175,9 +175,9 @@ async function moveCard(cardId, columnId) {
         throw new RangeError('Param columnId must be an integer');
     }
     return await octokit.request('POST /projects/columns/cards/{card_id}/moves', {
-        card_id: 42,
+        card_id: cardId,
         column_id: columnId,
-        position: 'position'
+        position: 'top'
     });
 }
 async function main() {
@@ -249,7 +249,10 @@ async function main() {
     if (new Date().getTime() - deployTime.getTime() <= 86400000) { // If the number of milliseconds between the current time is less than
         console.log('working'); // 24 hours * 60 minutes * 60 seconds * 1000 milliseconds
     } // i.e. 1 day
-    console.log(await getColumnCards(columnIdQA));
+    const QACards = await getColumnCards(columnIdQA);
+    for (const card of QACards) {
+        console.log(await moveCard(card.id, columnIdDone));
+    }
     return;
 }
 main().catch((e) => {
