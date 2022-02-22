@@ -100,9 +100,9 @@ async function getColumnCards(columnId) {
 }
 // Send a get request to retrieve json
 //  @param url The url to retrieve json from
-//  @return A promise representing fetching of the deploy time
-//    @fulfilled The time of the latest deploy as a date object
-//  @throws   {Error} if an error occurs while trying to fetch the project data
+//  @return A promise representing fetching of the json
+//    @fulfilled The json as an object
+//  @throws   {Error} if an error occurs while trying to fetch the json
 function getJSON(url) {
     return new Promise((resolve, reject) => {
         https.get(url, (response) => {
@@ -131,6 +131,25 @@ function getJSON(url) {
             return;
         });
     });
+}
+// Get the time of the latest deploy
+//  @return A promise representing fetching of the deploy time
+//    @fulfilled The time of the latest deploy as a date object
+//  @throws   {Error} if an error occurs while trying to fetch and parse the date
+async function getDeployTime() {
+    const health = await getJSON('https://casavolunteertracking.org/health');
+    const deployTimestamp = health['latest_deploy_time'];
+    if (!deployTimestamp) {
+        throw new Error('JSON from casa prod does not contain a valid deploy timestamp');
+    }
+    try {
+        const deployTime = new Date(deployTimestamp);
+        return deployTime;
+    }
+    catch (e) {
+        console.error('Could not parse value of latest_deploy_time as a date');
+        throw e;
+    }
 }
 // Get the project with name passed into projectName from the current repo
 //  @param projectName The name of the project
@@ -229,23 +248,13 @@ async function main() {
     }
     let deployTime;
     try {
-        const health = await getJSON('https://casavolunteertracking.org/health');
-        const deployTimestamp = health['latest_deploy_time'];
-        if (!deployTimestamp) {
-            throw new Error('JSON from casa prod does not contain a valid deploy timestamp');
-        }
-        try {
-            deployTime = new Date(deployTimestamp);
-        }
-        catch (e) {
-            console.error('Could not parse value of latest_deploy_time as a date');
-            throw e;
-        }
+        deployTime = await getDeployTime();
     }
     catch (e) {
         console.error(`ERROR: Failed to fetch latest deploy time`);
         throw e;
     }
+    console.log(deployTime);
     if (new Date().getTime() - deployTime.getTime() <= 86400000) { // If the number of milliseconds between the current time is less than
         console.log('working'); // 24 hours * 60 minutes * 60 seconds * 1000 milliseconds
     } // i.e. 1 day
