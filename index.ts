@@ -266,11 +266,16 @@ function moveCards (cards: Array<Card>, columnId: number): Promise<number | void
       return
     }
 
+    if (!cards.length) {
+      console.log('INFO: No cards to move')
+      resolve(0)
+
+      return
+    }
+
     let cardMoveAttemptCount = 0
     let cardsMovedCount = 0
     let requestSentCount = 0
-
-    console.log(cards)
 
     const requestInterval = setInterval(() => {
       const card = cards[requestSentCount]

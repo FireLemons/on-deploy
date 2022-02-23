@@ -219,10 +219,14 @@ function moveCards(cards, columnId) {
             reject(new RangeError('Param columnId must be an integer'));
             return;
         }
+        if (!cards.length) {
+            console.log('INFO: No cards to move');
+            resolve(0);
+            return;
+        }
         let cardMoveAttemptCount = 0;
         let cardsMovedCount = 0;
         let requestSentCount = 0;
-        console.log(cards);
         const requestInterval = setInterval(() => {
             const card = cards[requestSentCount];
             moveCard(card.id, columnId).then((response) => {
