@@ -277,7 +277,6 @@ async function main() {
     }
     try {
         const columnDone = await getColumn(columnNameDone, project.id);
-        console.log(columnDone);
         if (!columnDone) {
             throw new Error(`Could not find column in project:"${projectName}" with name:"${columnNameDone}"`);
         }
@@ -289,7 +288,6 @@ async function main() {
     }
     try {
         const columnQA = await getColumn(columnNameQA, project.id);
-        console.log(columnQA);
         if (!columnQA) {
             throw new Error(`Could not find column in project:"${projectName}" with name:"${columnNameQA}"`);
         }
