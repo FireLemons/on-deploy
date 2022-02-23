@@ -222,6 +222,7 @@ function moveCards(cards, columnId) {
         let cardMoveAttemptCount = 0;
         let cardsMovedCount = 0;
         let requestSentCount = 0;
+        console.log(cards);
         const requestInterval = setInterval(() => {
             const card = cards[requestSentCount];
             moveCard(card.id, columnId).then((response) => {

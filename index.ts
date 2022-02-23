@@ -270,6 +270,8 @@ function moveCards (cards: Array<Card>, columnId: number): Promise<number | void
     let cardsMovedCount = 0
     let requestSentCount = 0
 
+    console.log(cards)
+
     const requestInterval = setInterval(() => {
       const card = cards[requestSentCount]
 
