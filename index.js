@@ -173,13 +173,13 @@ async function getProject(projectName) {
         return project.name === projectName;
     });
 }
-// Moves a card to a different column
+// Moves a card to the top of a different column
 //  @param cardId The id of the card to be moved
 //  @param columnId The id of the column to move the card to
 //  @return A promise representing the moving of the card
 //    @fulfilled The Octokit request representing moving the card
-//  @throws   {RangeError} if an id less than zero or not an integer
-//  @throws   {Error}      if an error occurs while trying to fetch the project data
+//  @throws   {RangeError} if an id is less than zero or not an integer
+//  @throws   {Error}      if an error occurs while trying to move the card
 async function moveCard(cardId, columnId) {
     if (cardId <= 0) {
         throw new RangeError('Param cardId cannot be less than 1');
@@ -197,6 +197,59 @@ async function moveCard(cardId, columnId) {
         card_id: cardId,
         column_id: columnId,
         position: 'top'
+    });
+}
+// Moves a list of cards to the top of a different column
+//  @param cards The list of cards to be moved
+//  @param columnId The id of the column to move the card to
+//  @return A promise representing the moving of the cards
+//    @fulfilled The count of cards moved
+//  @throws   {RangeError} if columnId is less than zero or not an integer
+function moveCards(cards, columnId) {
+    const delayBetweenRequestsMS = cards.length >= MAX_CARDS_PER_PAGE ? 1000 : 0;
+    if (delayBetweenRequestsMS) {
+        console.log('INFO: A large number of label issue requests will be sent. Throttling requests.');
+    }
+    return new Promise((resolve, reject) => {
+        if (columnId <= 0) {
+            reject(new RangeError('Param columnId cannot be less than 1'));
+            return;
+        }
+        if (!Number.isInteger(columnId)) {
+            reject(new RangeError('Param columnId must be an integer'));
+            return;
+        }
+        let cardMoveAttemptCount = 0;
+        let cardsMovedCount = 0;
+        let requestSentCount = 0;
+        const requestInterval = setInterval(() => {
+            const card = cards[requestSentCount];
+            moveCard(card.id, columnId).then((response) => {
+                if (response !== null) {
+                    const status = response.status;
+                    if (200 <= status && status < 300) {
+                        cardsMovedCount++;
+                    }
+                    else if (status === 304) {
+                        console.log(`INFO: Card with id:${card.id} was already in the column`);
+                    }
+                    else {
+                        throw new Error(`Request to label card with id:${card.id} has status:${status}`);
+                    }
+                }
+            }).catch((e) => {
+                console.warn(`WARNING: Failed to move card with id: ${card.id}`);
+                console.warn(e.message);
+            }).finally(() => {
+                cardMoveAttemptCount++;
+                if (cardMoveAttemptCount >= cards.length) {
+                    resolve(cardsMovedCount);
+                }
+            });
+            if (++requestSentCount >= cards.length) {
+                clearInterval(requestInterval);
+            }
+        }, delayBetweenRequestsMS);
     });
 }
 async function main() {
@@ -254,15 +307,19 @@ async function main() {
         console.error(`ERROR: Failed to fetch latest deploy time`);
         throw e;
     }
-    console.log(deployTime);
     if (new Date().getTime() - deployTime.getTime() <= 86400000) { // If the number of milliseconds between the current time is less than
         console.log('working'); // 24 hours * 60 minutes * 60 seconds * 1000 milliseconds
     } // i.e. 1 day
-    const QACards = await getColumnCards(columnIdQA);
-    for (const card of QACards) {
-        console.log(await moveCard(card.id, columnIdDone));
+    let QACards;
+    try {
+        QACards = await getColumnCards(columnIdQA);
     }
-    return;
+    catch (e) {
+        console.error('ERROR: Failed to fetch QA card data');
+        throw e;
+    }
+    const cardsMovedCount = await moveCards(QACards, columnIdDone);
+    console.log(`INFO: Moved ${cardsMovedCount} of ${QACards.length} cards`);
 }
 main().catch((e) => {
     console.error(e.message);
