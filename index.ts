@@ -390,6 +390,8 @@ async function main (): Promise<void> {
     const cardsMovedCount = await moveCards(QACards.reverse(), columnIdDone)
     
     console.log(`INFO: Moved ${cardsMovedCount} of ${QACards.length} cards`)
+  } else {
+    console.log('INFO: No recent deploy')
   }
 }
 
