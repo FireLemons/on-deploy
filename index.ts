@@ -390,7 +390,7 @@ async function main (): Promise<void> {
     throw e
   }
 
-  const cardsMovedCount = await moveCards(QACards, columnIdDone)
+  const cardsMovedCount = await moveCards(QACards.reverse(), columnIdDone)
   
   console.log(`INFO: Moved ${cardsMovedCount} of ${QACards.length} cards`)
 }

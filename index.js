@@ -321,7 +321,7 @@ async function main() {
         console.error('ERROR: Failed to fetch QA card data');
         throw e;
     }
-    const cardsMovedCount = await moveCards(QACards, columnIdDone);
+    const cardsMovedCount = await moveCards(QACards.reverse(), columnIdDone);
     console.log(`INFO: Moved ${cardsMovedCount} of ${QACards.length} cards`);
 }
 main().catch((e) => {
