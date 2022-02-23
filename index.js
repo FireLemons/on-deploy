@@ -258,50 +258,6 @@ function moveCards(cards, columnId) {
     });
 }
 async function main() {
-    let columnIdDone;
-    let columnIdQA;
-    let project;
-    if (!(columnNameDone.length)) {
-        throw new TypeError('ERROR: Param done_column_name cannot be empty string');
-    }
-    if (!(columnNameQA.length)) {
-        throw new TypeError('ERROR: Param QA_column_name cannot be empty string');
-    }
-    if (!(projectName.length)) {
-        throw new TypeError('ERROR: Param project_name cannot be empty string');
-    }
-    try {
-        project = await getProject(projectName);
-        if (!project) {
-            throw new Error('  No such project with matching name');
-        }
-    }
-    catch (e) {
-        console.error(`ERROR: Failed to find project with name "${projectName}"`);
-        throw e;
-    }
-    try {
-        const columnDone = await getColumn(columnNameDone, project.id);
-        if (!columnDone) {
-            throw new Error(`Could not find column in project:"${projectName}" with name:"${columnNameDone}"`);
-        }
-        columnIdDone = columnDone.id;
-    }
-    catch (e) {
-        console.error(`ERROR: Failed to find column with name ${columnNameDone}`);
-        throw e;
-    }
-    try {
-        const columnQA = await getColumn(columnNameQA, project.id);
-        if (!columnQA) {
-            throw new Error(`Could not find column in project:"${projectName}" with name:"${columnNameQA}"`);
-        }
-        columnIdQA = columnQA.id;
-    }
-    catch (e) {
-        console.error(`ERROR: Failed to find column with name ${columnNameQA}`);
-        throw e;
-    }
     let deployTime;
     try {
         deployTime = await getDeployTime();
@@ -311,18 +267,61 @@ async function main() {
         throw e;
     }
     if (new Date().getTime() - deployTime.getTime() <= 86400000) { // If the number of milliseconds between the current time is less than
-        console.log('working'); // 24 hours * 60 minutes * 60 seconds * 1000 milliseconds
-    } // i.e. 1 day
-    let QACards;
-    try {
-        QACards = await getColumnCards(columnIdQA);
+        let columnIdDone; // 24 hours * 60 minutes * 60 seconds * 1000 milliseconds
+        let columnIdQA; // i.e. 1 day
+        let project;
+        if (!(columnNameDone.length)) {
+            throw new TypeError('ERROR: Param done_column_name cannot be empty string');
+        }
+        if (!(columnNameQA.length)) {
+            throw new TypeError('ERROR: Param QA_column_name cannot be empty string');
+        }
+        if (!(projectName.length)) {
+            throw new TypeError('ERROR: Param project_name cannot be empty string');
+        }
+        try {
+            project = await getProject(projectName);
+            if (!project) {
+                throw new Error('  No such project with matching name');
+            }
+        }
+        catch (e) {
+            console.error(`ERROR: Failed to find project with name "${projectName}"`);
+            throw e;
+        }
+        try {
+            const columnDone = await getColumn(columnNameDone, project.id);
+            if (!columnDone) {
+                throw new Error(`Could not find column in project:"${projectName}" with name:"${columnNameDone}"`);
+            }
+            columnIdDone = columnDone.id;
+        }
+        catch (e) {
+            console.error(`ERROR: Failed to find column with name ${columnNameDone}`);
+            throw e;
+        }
+        try {
+            const columnQA = await getColumn(columnNameQA, project.id);
+            if (!columnQA) {
+                throw new Error(`Could not find column in project:"${projectName}" with name:"${columnNameQA}"`);
+            }
+            columnIdQA = columnQA.id;
+        }
+        catch (e) {
+            console.error(`ERROR: Failed to find column with name ${columnNameQA}`);
+            throw e;
+        }
+        let QACards;
+        try {
+            QACards = await getColumnCards(columnIdQA);
+        }
+        catch (e) {
+            console.error('ERROR: Failed to fetch QA card data');
+            throw e;
+        }
+        const cardsMovedCount = await moveCards(QACards.reverse(), columnIdDone);
+        console.log(`INFO: Moved ${cardsMovedCount} of ${QACards.length} cards`);
     }
-    catch (e) {
-        console.error('ERROR: Failed to fetch QA card data');
-        throw e;
-    }
-    const cardsMovedCount = await moveCards(QACards.reverse(), columnIdDone);
-    console.log(`INFO: Moved ${cardsMovedCount} of ${QACards.length} cards`);
 }
 main().catch((e) => {
     console.error(e.message);
