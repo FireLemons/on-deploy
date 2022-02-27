@@ -13,20 +13,38 @@ const MAX_CARDS_PER_PAGE = 100; // from https://docs.github.com/en/rest/referenc
 function isSuccessStatus(status) {
     return 200 <= status && status < 400;
 }
+// Archives a project card
+//  @param    cardId The id of the card to be archived
+//  @return   A promise representing the archiving of the card
+//    @fulfilled True if the archiving was successful
+//  @throws   {RangeError} if cardId is less than 1 or not an integer
+//  @throws   {Error} if an error occurs while trying to archive the card
+async function archiveCard(cardId) {
+    if (!Number.isInteger(cardId)) {
+        throw new TypeError('Param cardId is not an integer');
+    }
+    else if (cardId < 1) {
+        throw new RangeError('Param cardId cannot be negative');
+    }
+    const archiveRequest = await octokit.request('POST /projects/1/cards/{card_id}/archive', {
+        card_id: cardId
+    });
+    return isSuccessStatus(archiveRequest.status);
+}
 // Lists up to MAX_CARDS_PER_PAGE cards from a column
 //  @param    columnId The id of the column containing the cards
 //  @param    pageNumber The page of up to MAX_CARDS_PER_PAGE cards to retrieve
 //  @return   A promise representing fetching the page of cards
 //    @fulfilled The card data
 //  @throws   {TypeError}  for a parameter of the incorrect type
-//  @throws   {RangeError} if columnId is negative
-//  @throws   {RangeError} if pageNumber is less than 1
+//  @throws   {RangeError} if columnId is less than 1 or not an integer
+//  @throws   {RangeError} if pageNumber is less than 1 or not an integer
 //  @throws   {Error} if an error occurs while trying to fetch the card data
 async function getCardPage(columnId, pageNumber) {
     if (!Number.isInteger(columnId)) {
         throw new TypeError('Param columnId is not an integer');
     }
-    else if (columnId < 0) {
+    else if (columnId < 1) {
         throw new RangeError('Param columnId cannot be negative');
     }
     if (!Number.isInteger(pageNumber)) {
@@ -266,65 +284,79 @@ async function main() {
         console.error(`ERROR: Failed to fetch latest deploy time`);
         throw e;
     }
-    if (new Date().getTime() - deployTime.getTime() <= 86400000) { // If the number of milliseconds between the current time is less than
-        let columnIdDone; // 24 hours * 60 minutes * 60 seconds * 1000 milliseconds
-        let columnIdQA; // i.e. 1 day
-        let project;
-        if (!(columnNameDone.length)) {
-            throw new TypeError('ERROR: Param done_column_name cannot be empty string');
+    /*if (new Date().getTime() - deployTime.getTime() <= 86400000) { // If the number of milliseconds between the current time is less than
+      let columnIdDone                                             // 24 hours * 60 minutes * 60 seconds * 1000 milliseconds
+      let columnIdQA                                               // i.e. 1 day
+      let project
+  
+      if (!(columnNameDone.length)) {
+        throw new TypeError('ERROR: Param done_column_name cannot be empty string')
+      }
+  
+      if (!(columnNameQA.length)) {
+        throw new TypeError('ERROR: Param QA_column_name cannot be empty string')
+      }
+  
+      if (!(projectName.length)) {
+        throw new TypeError('ERROR: Param project_name cannot be empty string')
+      }
+  
+      try {
+        project = await getProject(projectName)
+  
+        if (!project) {
+          throw new Error('  No such project with matching name')
         }
-        if (!(columnNameQA.length)) {
-            throw new TypeError('ERROR: Param QA_column_name cannot be empty string');
+      } catch (e) {
+        console.error(`ERROR: Failed to find project with name "${projectName}"`)
+        throw e
+      }
+  
+      try {
+        const columnDone = await getColumn(columnNameDone, project.id)
+  
+        if (!columnDone) {
+          throw new Error(`Could not find column in project:"${projectName}" with name:"${columnNameDone}"`)
         }
-        if (!(projectName.length)) {
-            throw new TypeError('ERROR: Param project_name cannot be empty string');
+  
+        columnIdDone = columnDone.id
+      } catch (e) {
+        console.error(`ERROR: Failed to find column with name ${columnNameDone}`)
+  
+        throw e
+      }
+  
+      try {
+        const columnQA = await getColumn(columnNameQA, project.id)
+  
+        if (!columnQA) {
+          throw new Error(`Could not find column in project:"${projectName}" with name:"${columnNameQA}"`)
         }
-        try {
-            project = await getProject(projectName);
-            if (!project) {
-                throw new Error('  No such project with matching name');
-            }
-        }
-        catch (e) {
-            console.error(`ERROR: Failed to find project with name "${projectName}"`);
-            throw e;
-        }
-        try {
-            const columnDone = await getColumn(columnNameDone, project.id);
-            if (!columnDone) {
-                throw new Error(`Could not find column in project:"${projectName}" with name:"${columnNameDone}"`);
-            }
-            columnIdDone = columnDone.id;
-        }
-        catch (e) {
-            console.error(`ERROR: Failed to find column with name ${columnNameDone}`);
-            throw e;
-        }
-        try {
-            const columnQA = await getColumn(columnNameQA, project.id);
-            if (!columnQA) {
-                throw new Error(`Could not find column in project:"${projectName}" with name:"${columnNameQA}"`);
-            }
-            columnIdQA = columnQA.id;
-        }
-        catch (e) {
-            console.error(`ERROR: Failed to find column with name ${columnNameQA}`);
-            throw e;
-        }
-        let QACards;
-        try {
-            QACards = await getColumnCards(columnIdQA);
-        }
-        catch (e) {
-            console.error('ERROR: Failed to fetch QA card data');
-            throw e;
-        }
-        const cardsMovedCount = await moveCards(QACards.reverse(), columnIdDone);
-        console.log(`INFO: Moved ${cardsMovedCount} of ${QACards.length} cards`);
-    }
-    else {
-        console.log('INFO: No recent deploy');
-    }
+  
+        columnIdQA = columnQA.id
+      } catch (e) {
+        console.error(`ERROR: Failed to find column with name ${columnNameQA}`)
+  
+        throw e
+      }
+  
+      let QACards
+  
+      try {
+        QACards = await getColumnCards(columnIdQA)
+      } catch (e) {
+        console.error('ERROR: Failed to fetch QA card data')
+  
+        throw e
+      }
+  
+      const cardsMovedCount = await moveCards(QACards.reverse(), columnIdDone)
+      
+      console.log(`INFO: Moved ${cardsMovedCount} of ${QACards.length} cards`)
+    } else {
+      console.log('INFO: No recent deploy')
+    }*/
+    console.log(await archiveCard(73616957));
 }
 main().catch((e) => {
     console.error(e.message);
