@@ -39,7 +39,8 @@ async function archiveCard (cardId: number): Promise<boolean> {
     throw new RangeError('Param cardId cannot be negative')
   }
 
-  const archiveRequest = await octokit.request('POST /projects/1/cards/{card_id}/archive', {
+  const archiveRequest = await octokit.request('PATCH /projects/columns/cards/{card_id}', {
+    archived: true,
     card_id: cardId
   })
 

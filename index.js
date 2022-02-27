@@ -26,7 +26,8 @@ async function archiveCard(cardId) {
     else if (cardId < 1) {
         throw new RangeError('Param cardId cannot be negative');
     }
-    const archiveRequest = await octokit.request('POST /projects/1/cards/{card_id}/archive', {
+    const archiveRequest = await octokit.request('PATCH /projects/columns/cards/{card_id}', {
+        archived: true,
         card_id: cardId
     });
     return isSuccessStatus(archiveRequest.status);
