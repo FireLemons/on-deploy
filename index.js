@@ -359,6 +359,6 @@ async function main() {
     console.log(await archiveCard(73616957));
 }
 main().catch((e) => {
-    console.error(e.message);
+    console.error(e);
     process.exit(1);
 });
