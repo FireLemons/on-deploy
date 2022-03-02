@@ -31,6 +31,7 @@ jobs:
         uses: Firelemons/on-deploy@v1.0
         with:
           project_name: "CASA Volunteer Portal"
+          done_column_card_limit: "16"
           done_column_name: "Done (in prod!)"
           QA_column_name: "Merged to QA"open
           token: ${{secrets.GITHUB_TOKEN}}
