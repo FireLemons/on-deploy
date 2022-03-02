@@ -62,7 +62,6 @@ function archiveCards(cards, limit) {
         let requestSentCount = 0;
         const requestInterval = setInterval(() => {
             const card = cardsToBeArchived[requestSentCount];
-            console.log(card);
             archiveCard(card.id).then((response) => {
                 if (response !== null) {
                     const status = response.status;
@@ -81,11 +80,11 @@ function archiveCards(cards, limit) {
                 console.warn(e.message);
             }).finally(() => {
                 cardArchiveAttemptCount++;
-                if (cardArchiveAttemptCount >= cards.length) {
+                if (cardArchiveAttemptCount >= cardsToBeArchived.length) {
                     resolve(cardsArchivedCount);
                 }
             });
-            if (++requestSentCount >= cards.length) {
+            if (++requestSentCount >= cardsToBeArchived.length) {
                 clearInterval(requestInterval);
             }
         }, delayBetweenRequestsMS);
@@ -120,7 +119,6 @@ async function getCardPage(columnId, pageNumber) {
         per_page: MAX_CARDS_PER_PAGE
     });
     if (isSuccessStatus(cardPageFetchResponse.status)) {
-        console.log(cardPageFetchResponse.data);
         return cardPageFetchResponse.data;
     }
     else {
