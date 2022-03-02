@@ -13,6 +13,7 @@ import * as github from '@actions/github'
 // Javascript destructuring assignment. See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Destructuring_assignment
 import { OctokitResponse } from '@octokit/types'
 const {owner, repo} = github.context.repo
+const cardLimitColumnDone = core.getInput('done_column_card_limit')
 const columnNameDone = core.getInput('done_column_name')
 const columnNameQA = core.getInput('QA_column_name')
 const https = require('https')
@@ -29,22 +30,88 @@ function isSuccessStatus(status: number): boolean {
 // Archives a project card
 //  @param    cardId The id of the card to be archived
 //  @return   A promise representing the archiving of the card
-//    @fulfilled True if the archiving was successful
 //  @throws   {RangeError} if cardId is less than 1 or not an integer
 //  @throws   {Error} if an error occurs while trying to archive the card
-async function archiveCard (cardId: number): Promise<boolean> {
+async function archiveCard (cardId: number): Promise<OctokitResponse<any, any>> {
   if (!Number.isInteger(cardId)) {
     throw new TypeError('Param cardId is not an integer')
   } else if (cardId < 1) {
     throw new RangeError('Param cardId cannot be negative')
   }
 
-  const archiveRequest = await octokit.request('PATCH /projects/columns/cards/{card_id}', {
+  return await octokit.request('PATCH /projects/columns/cards/{card_id}', {
     archived: true,
     card_id: cardId
   })
+}
 
-  return isSuccessStatus(archiveRequest.status)
+// Archives cards from a list if the list contains more cards than the cardLimitColumnDone arg number of cards
+//  @param cards The list of cards to be archived
+//  @param limit The the maximum count of cards param cards can contain before cards are archived
+//  @return A promise representing the archiving of the cards
+//  @throws {RangeError} if limit is negative or not an integer
+//    @fulfilled The number of cards successfully archived
+function archiveCards (cards: Array<Card>, limit: number): Promise<number> {
+  const cardsToBeArchived = cards.slice(limit)
+  const delayBetweenRequestsMS = cards.length >= MAX_CARDS_PER_PAGE ? 1000 : 0
+
+  if (delayBetweenRequestsMS) {
+    console.log('INFO: A large number of archive project card requests will be sent. Throttling requests.')
+  }
+
+  return new Promise((resolve, reject) => {
+    if (cardsToBeArchived.length <= limit) {
+      console.log('INFO: No cards to archive')
+      resolve(0)
+
+      return
+    }
+
+    if (!Number.isInteger(limit)) {
+      reject(new TypeError('Param limit is not an integer'))
+
+      return
+    } else if (limit < 0) {
+      reject(new RangeError('Param limit cannot be negative'))
+
+      return
+    }
+
+    let cardArchiveAttemptCount = 0
+    let cardsArchivedCount = 0
+    let requestSentCount = 0
+
+    const requestInterval = setInterval(() => {
+      const card = cardsToBeArchived[requestSentCount]
+
+      archiveCard(card.id).then((response) => {
+        if (response !== null) {
+          const status = response.status
+
+          if (200 <= status && status < 300) {
+            cardsArchivedCount++
+          } else if (status === 304) {
+            console.log(`INFO: Card with id:${card.id} was already archived`)
+          } else {
+            throw new Error(`Request to archive card with id:${card.id} has status:${status}`)
+          }
+        }
+      }).catch((e) => {
+        console.warn(`WARNING: Failed to archive card with id: ${card.id}`)
+        console.warn(e.message)
+      }).finally(() => {
+        cardArchiveAttemptCount++
+
+        if (cardArchiveAttemptCount >= cards.length) {
+          resolve(cardsArchivedCount)
+        }
+      })
+
+      if (++requestSentCount >= cards.length) {
+        clearInterval(requestInterval)
+      }
+    }, delayBetweenRequestsMS)
+  })
 }
 
 // Lists up to MAX_CARDS_PER_PAGE cards from a column
@@ -271,7 +338,7 @@ function moveCards (cards: Array<Card>, columnId: number): Promise<number | void
   const delayBetweenRequestsMS = cards.length >= MAX_CARDS_PER_PAGE ? 1000 : 0
 
   if (delayBetweenRequestsMS) {
-    console.log('INFO: A large number of label issue requests will be sent. Throttling requests.')
+    console.log('INFO: A large number of move project card requests will be sent. Throttling requests.')
   }
 
   return new Promise((resolve, reject) => {
@@ -310,7 +377,7 @@ function moveCards (cards: Array<Card>, columnId: number): Promise<number | void
           } else if (status === 304) {
             console.log(`INFO: Card with id:${card.id} was already in the column`)
           } else {
-            throw new Error(`Request to label card with id:${card.id} has status:${status}`)
+            throw new Error(`Request to move card with id:${card.id} has status:${status}`)
           }
         }
       }).catch((e) => {
@@ -342,7 +409,7 @@ async function main (): Promise<void> {
     throw e
   }
 
-  /*if (new Date().getTime() - deployTime.getTime() <= 86400000) { // If the number of milliseconds between the current time is less than
+  //if (new Date().getTime() - deployTime.getTime() <= 86400000) { // If the number of milliseconds between the current time is less than
     let columnIdDone                                             // 24 hours * 60 minutes * 60 seconds * 1000 milliseconds
     let columnIdQA                                               // i.e. 1 day
     let project
@@ -411,11 +478,36 @@ async function main (): Promise<void> {
     const cardsMovedCount = await moveCards(QACards.reverse(), columnIdDone)
     
     console.log(`INFO: Moved ${cardsMovedCount} of ${QACards.length} cards`)
-  } else {
+
+
+    ////////////////////////////////////////////////////////
+    // Archive Cards
+    ////////////////////////////////////////////////////////
+
+    let doneCardLimit
+
+    try {
+      doneCardLimit = parseInt(cardLimitColumnDone)
+    } catch (e) {
+      console.error('ERROR: Failed to parse param "done_column_card_limit" as an integer')
+      throw e
+    }
+
+    let doneCards
+
+    try {
+      doneCards = await getColumnCards(columnIdDone)
+    } catch (e) {
+      console.error('ERROR: Failed to fetch done column card data')
+
+      throw e
+    }
+
+    const cardsArchivedCount = await archiveCards(doneCards, doneCardLimit)
+    console.log(`INFO: Archived ${cardsArchivedCount} of ${Math.min(0, doneCards.length - doneCardLimit)} cards`)
+  /*} else {
     console.log('INFO: No recent deploy')
   }*/
-
-  console.log(await archiveCard(73616957))
 }
 
 main().catch((e) => {
