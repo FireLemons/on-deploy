@@ -32,6 +32,14 @@ jobs:
         with:
           project_name: "CASA Volunteer Portal"
           done_column_name: "Done (in prod!)"
-          QA_column_name: "Merged to QA"
+          QA_column_name: "Merged to QA"open
           token: ${{secrets.GITHUB_TOKEN}}
 ```
+
+## Developing  
+### Setup  
+`git clone git@github.com:FireLemons/on-deploy.git` Clone the repo  
+`cd on-deploy`  
+`npm i` Install node dependencies  
+Open and edit `index.ts`(a typescript file)  
+Open a new terminal and run `npm run autocompile`. This will automatically compile `index.ts` into `index.js` every time `index.ts` is saved. Watch the window for typescript errors.
