@@ -4,7 +4,7 @@ If a deploy has been done witin the day,
 
 ## Params
 ### done_column_card_limit:  
-The maximum number of cards allowed in the done column  
+The maximum number of cards allowed in the done column before archiving them  
 
 ### done_column_name:
 The name of the column representing issues pushed to prod  
