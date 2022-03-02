@@ -120,6 +120,7 @@ async function getCardPage(columnId, pageNumber) {
         per_page: MAX_CARDS_PER_PAGE
     });
     if (isSuccessStatus(cardPageFetchResponse.status)) {
+        console.log(cardPageFetchResponse.data);
         return cardPageFetchResponse.data;
     }
     else {

@@ -146,6 +146,7 @@ async function getCardPage (columnId: number, pageNumber: number): Promise<Array
   })
 
   if (isSuccessStatus(cardPageFetchResponse.status)) {
+    console.log(cardPageFetchResponse.data)
     return cardPageFetchResponse.data
   } else {
     console.error(`Failed to fetch card page #${pageNumber} from column id=${columnId}`)
