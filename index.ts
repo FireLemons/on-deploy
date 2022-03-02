@@ -81,10 +81,10 @@ function archiveCards (cards: Array<Card>, limit: number): Promise<number> {
     let cardsArchivedCount = 0
     let requestSentCount = 0
 
-    console.log(cardsToBeArchived)
-
     const requestInterval = setInterval(() => {
       const card = cardsToBeArchived[requestSentCount]
+
+      console.log(card)
 
       archiveCard(card.id).then((response) => {
         if (response !== null) {
