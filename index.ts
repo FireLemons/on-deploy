@@ -504,7 +504,7 @@ async function main (): Promise<void> {
     }
 
     const cardsArchivedCount = await archiveCards(doneCards, doneCardLimit)
-    console.log(`INFO: Archived ${cardsArchivedCount} of ${Math.min(0, doneCards.length - doneCardLimit)} cards`)
+    console.log(`INFO: Archived ${cardsArchivedCount} of ${Math.max(0, doneCards.length - doneCardLimit)} cards`)
   } else {
     console.log('INFO: No recent deploy')
   }
