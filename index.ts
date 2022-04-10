@@ -52,12 +52,7 @@ async function archiveCard (cardId: number): Promise<OctokitResponse<any, any>> 
 //  @throws {RangeError} if limit is negative or not an integer
 //    @fulfilled The number of cards successfully archived
 function archiveCards (cards: Array<Card>, limit: number): Promise<number> {
-  console.log("cards")
-  console.log(cards)
-
   const cardsToBeArchived = cards.slice(limit)
-  console.log("cardsToBeArchived")
-  console.log(cardsToBeArchived)
   const delayBetweenRequestsMS = cards.length >= MAX_CARDS_PER_PAGE ? 1000 : 0
 
   if (delayBetweenRequestsMS) {
@@ -90,6 +85,7 @@ function archiveCards (cards: Array<Card>, limit: number): Promise<number> {
       const card = cardsToBeArchived[requestSentCount]
 
       archiveCard(card.id).then((response) => {
+        console.log(response)
         if (response !== null) {
           const status = response.status
 
