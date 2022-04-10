@@ -38,7 +38,11 @@ async function archiveCard(cardId) {
 //  @throws {RangeError} if limit is negative or not an integer
 //    @fulfilled The number of cards successfully archived
 function archiveCards(cards, limit) {
+    console.log("cards");
+    console.log(cards);
     const cardsToBeArchived = cards.slice(limit);
+    console.log("cardsToBeArchived");
+    console.log(cardsToBeArchived);
     const delayBetweenRequestsMS = cards.length >= MAX_CARDS_PER_PAGE ? 1000 : 0;
     if (delayBetweenRequestsMS) {
         console.log('INFO: A large number of archive project card requests will be sent. Throttling requests.');
