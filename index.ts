@@ -414,7 +414,7 @@ async function main (): Promise<void> {
     throw e
   }
 
-  if (new Date().getTime() - deployTime.getTime() <= 86400000) { // If the number of milliseconds between the current time is less than
+  //if (new Date().getTime() - deployTime.getTime() <= 86400000) { // If the number of milliseconds between the current time is less than
     let columnIdDone                                             // 24 hours * 60 minutes * 60 seconds * 1000 milliseconds
     let columnIdQA                                               // i.e. 1 day
     let project
@@ -510,9 +510,9 @@ async function main (): Promise<void> {
 
     const cardsArchivedCount = await archiveCards(doneCards, doneCardLimit)
     console.log(`INFO: Archived ${cardsArchivedCount} of ${Math.max(0, doneCards.length - doneCardLimit)} cards`)
-  } else {
-    console.log('INFO: No recent deploy')
-  }
+  //} else {
+  //  console.log('INFO: No recent deploy')
+  //}
 }
 
 main().catch((e) => {
