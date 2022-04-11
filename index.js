@@ -44,11 +44,6 @@ function archiveCards(cards, limit) {
         console.log('INFO: A large number of archive project card requests will be sent. Throttling requests.');
     }
     return new Promise((resolve, reject) => {
-        if (cardsToBeArchived.length <= limit) {
-            console.log('INFO: No cards to archive');
-            resolve(0);
-            return;
-        }
         if (!Number.isInteger(limit)) {
             reject(new TypeError('Param limit is not an integer'));
             return;
@@ -63,7 +58,6 @@ function archiveCards(cards, limit) {
         const requestInterval = setInterval(() => {
             const card = cardsToBeArchived[requestSentCount];
             archiveCard(card.id).then((response) => {
-                console.log(response);
                 if (response !== null) {
                     const status = response.status;
                     if (200 <= status && status < 300) {
@@ -344,9 +338,12 @@ async function main() {
         console.error(`ERROR: Failed to fetch latest deploy time`);
         throw e;
     }
-    //if (new Date().getTime() - deployTime.getTime() <= 86400000) { // If the number of milliseconds between the current time is less than
-    let columnIdDone; // 24 hours * 60 minutes * 60 seconds * 1000 milliseconds
-    let columnIdQA; // i.e. 1 day
+    if (new Date().getTime() - deployTime.getTime() > 86400000) { // If the number of milliseconds between the current time and deploy time is more than
+        console.log('INFO: No recent deploy'); // 24 hours * 60 minutes * 60 seconds * 1000 milliseconds
+        return; // i.e. 1 day
+    }
+    let columnIdDone;
+    let columnIdQA;
     let project;
     if (!(columnNameDone.length)) {
         throw new TypeError('ERROR: Param done_column_name cannot be empty string');
@@ -420,9 +417,6 @@ async function main() {
     }
     const cardsArchivedCount = await archiveCards(doneCards, doneCardLimit);
     console.log(`INFO: Archived ${cardsArchivedCount} of ${Math.max(0, doneCards.length - doneCardLimit)} cards`);
-    //} else {
-    //  console.log('INFO: No recent deploy')
-    //}
 }
 main().catch((e) => {
     console.error(e);

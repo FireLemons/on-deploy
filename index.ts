@@ -60,13 +60,6 @@ function archiveCards (cards: Array<Card>, limit: number): Promise<number> {
   }
 
   return new Promise((resolve, reject) => {
-    if (cardsToBeArchived.length <= limit) {
-      console.log('INFO: No cards to archive')
-      resolve(0)
-
-      return
-    }
-
     if (!Number.isInteger(limit)) {
       reject(new TypeError('Param limit is not an integer'))
 
@@ -85,7 +78,6 @@ function archiveCards (cards: Array<Card>, limit: number): Promise<number> {
       const card = cardsToBeArchived[requestSentCount]
 
       archiveCard(card.id).then((response) => {
-        console.log(response)
         if (response !== null) {
           const status = response.status
 
@@ -410,105 +402,106 @@ async function main (): Promise<void> {
     throw e
   }
 
-  //if (new Date().getTime() - deployTime.getTime() <= 86400000) { // If the number of milliseconds between the current time is less than
-    let columnIdDone                                             // 24 hours * 60 minutes * 60 seconds * 1000 milliseconds
-    let columnIdQA                                               // i.e. 1 day
-    let project
+  if (new Date().getTime() - deployTime.getTime() > 86400000) { // If the number of milliseconds between the current time and deploy time is more than
+    console.log('INFO: No recent deploy')                       // 24 hours * 60 minutes * 60 seconds * 1000 milliseconds
+    return                                                      // i.e. 1 day
+  }
 
-    if (!(columnNameDone.length)) {
-      throw new TypeError('ERROR: Param done_column_name cannot be empty string')
+  let columnIdDone
+  let columnIdQA
+  let project
+
+  if (!(columnNameDone.length)) {
+    throw new TypeError('ERROR: Param done_column_name cannot be empty string')
+  }
+
+  if (!(columnNameQA.length)) {
+    throw new TypeError('ERROR: Param QA_column_name cannot be empty string')
+  }
+
+  if (!(projectName.length)) {
+    throw new TypeError('ERROR: Param project_name cannot be empty string')
+  }
+
+  try {
+    project = await getProject(projectName)
+
+    if (!project) {
+      throw new Error('  No such project with matching name')
+    }
+  } catch (e) {
+    console.error(`ERROR: Failed to find project with name "${projectName}"`)
+    throw e
+  }
+
+  try {
+    const columnDone = await getColumn(columnNameDone, project.id)
+
+    if (!columnDone) {
+      throw new Error(`Could not find column in project:"${projectName}" with name:"${columnNameDone}"`)
     }
 
-    if (!(columnNameQA.length)) {
-      throw new TypeError('ERROR: Param QA_column_name cannot be empty string')
+    columnIdDone = columnDone.id
+  } catch (e) {
+    console.error(`ERROR: Failed to find column with name ${columnNameDone}`)
+
+    throw e
+  }
+
+  try {
+    const columnQA = await getColumn(columnNameQA, project.id)
+
+    if (!columnQA) {
+      throw new Error(`Could not find column in project:"${projectName}" with name:"${columnNameQA}"`)
     }
 
-    if (!(projectName.length)) {
-      throw new TypeError('ERROR: Param project_name cannot be empty string')
-    }
+    columnIdQA = columnQA.id
+  } catch (e) {
+    console.error(`ERROR: Failed to find column with name ${columnNameQA}`)
 
-    try {
-      project = await getProject(projectName)
+    throw e
+  }
 
-      if (!project) {
-        throw new Error('  No such project with matching name')
-      }
-    } catch (e) {
-      console.error(`ERROR: Failed to find project with name "${projectName}"`)
-      throw e
-    }
+  let QACards
 
-    try {
-      const columnDone = await getColumn(columnNameDone, project.id)
+  try {
+    QACards = await getColumnCards(columnIdQA)
+  } catch (e) {
+    console.error('ERROR: Failed to fetch QA card data')
 
-      if (!columnDone) {
-        throw new Error(`Could not find column in project:"${projectName}" with name:"${columnNameDone}"`)
-      }
+    throw e
+  }
 
-      columnIdDone = columnDone.id
-    } catch (e) {
-      console.error(`ERROR: Failed to find column with name ${columnNameDone}`)
+  const cardsMovedCount = await moveCards(QACards.reverse(), columnIdDone)
 
-      throw e
-    }
-
-    try {
-      const columnQA = await getColumn(columnNameQA, project.id)
-
-      if (!columnQA) {
-        throw new Error(`Could not find column in project:"${projectName}" with name:"${columnNameQA}"`)
-      }
-
-      columnIdQA = columnQA.id
-    } catch (e) {
-      console.error(`ERROR: Failed to find column with name ${columnNameQA}`)
-
-      throw e
-    }
-
-    let QACards
-
-    try {
-      QACards = await getColumnCards(columnIdQA)
-    } catch (e) {
-      console.error('ERROR: Failed to fetch QA card data')
-
-      throw e
-    }
-
-    const cardsMovedCount = await moveCards(QACards.reverse(), columnIdDone)
-    
-    console.log(`INFO: Moved ${cardsMovedCount} of ${QACards.length} cards`)
+  console.log(`INFO: Moved ${cardsMovedCount} of ${QACards.length} cards`)
 
 
-    ////////////////////////////////////////////////////////
-    // Archive Cards
-    ////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////
+  // Archive Cards
+  ////////////////////////////////////////////////////////
 
-    let doneCardLimit
+  let doneCardLimit
 
-    try {
-      doneCardLimit = parseInt(cardLimitColumnDone)
-    } catch (e) {
-      console.error('ERROR: Failed to parse param "done_column_card_limit" as an integer')
-      throw e
-    }
+  try {
+    doneCardLimit = parseInt(cardLimitColumnDone)
+  } catch (e) {
+    console.error('ERROR: Failed to parse param "done_column_card_limit" as an integer')
+    throw e
+  }
 
-    let doneCards
+  let doneCards
 
-    try {
-      doneCards = await getColumnCards(columnIdDone)
-    } catch (e) {
-      console.error('ERROR: Failed to fetch done column card data')
+  try {
+    doneCards = await getColumnCards(columnIdDone)
+  } catch (e) {
+    console.error('ERROR: Failed to fetch done column card data')
 
-      throw e
-    }
+    throw e
+  }
 
-    const cardsArchivedCount = await archiveCards(doneCards, doneCardLimit)
-    console.log(`INFO: Archived ${cardsArchivedCount} of ${Math.max(0, doneCards.length - doneCardLimit)} cards`)
-  //} else {
-  //  console.log('INFO: No recent deploy')
-  //}
+  const cardsArchivedCount = await archiveCards(doneCards, doneCardLimit)
+  console.log(`INFO: Archived ${cardsArchivedCount} of ${Math.max(0, doneCards.length - doneCardLimit)} cards`)
 }
 
 main().catch((e) => {
