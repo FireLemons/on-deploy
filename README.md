@@ -28,7 +28,7 @@ jobs:
     name: On Deploy
     steps:
       - name: After Deploy
-        uses: Firelemons/on-deploy@v1.0
+        uses: Firelemons/on-deploy@v2.2
         with:
           project_name: "CASA Volunteer Portal"
           done_column_card_limit: "16"
