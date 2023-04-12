@@ -209,7 +209,7 @@ function getJSON(url) {
 //    @fulfilled The time of the latest deploy as a date object
 //  @throws   {Error} if an error occurs while trying to fetch and parse the date
 async function getDeployTime() {
-    const health = await getJSON('https://casavolunteertracking.org/health');
+    const health = await getJSON('https://casavolunteertracking.org/health.json');
     const deployTimestamp = health['latest_deploy_time'];
     if (!deployTimestamp) {
         throw new Error('JSON from casa prod does not contain a valid deploy timestamp');
